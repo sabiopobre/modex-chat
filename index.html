@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modex | Modealo</title>
+  <!-- Favicon -->
+  <link rel="icon" href="https://modealo.com/favicon.ico" type="image/x-icon">
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js para reactividad -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Marked.js para renderizar Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            modealo: {
+              input: '#3f4454',
+              response: '#1f2d41'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .message-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .message-container::-webkit-scrollbar-track {
+      background: #1f2937;
+    }
+    .message-container::-webkit-scrollbar-thumb {
+      background-color: #4b5563;
+      border-radius: 20px;
+    }
+    .typing-animation::after {
+      content: '';
+      animation: typing 1.5s infinite;
+    }
+    @keyframes typing {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+      100% { content: ''; }
+    }
+    .nova-glow {
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+    /* Ajustes para el formato de texto */
+    .markdown-content {
+      font-size: 0.95rem;
+      line-height: 2.4;
+    }
+    .markdown-content p { 
+      margin: 0.2em 0; 
+    }
+    .markdown-content ul, 
+    .markdown-content ol { 
+      margin: 0.2em 0; 
+      padding-left: 1em; 
+    }
+    .markdown-content li { 
+      margin: 0; 
+      line-height: 1.4;
+    }
+    .markdown-content strong { 
+      color: #fff; 
+    }
+    .markdown-content em { 
+      color: #fff; 
+    }
+  </style>
+</head>
+<body class="bg-black text-white">
+  <div class="h-screen w-screen flex flex-col" x-data="chatApp()">
+    <!-- Encabezado -->
+    <header class="py-4 px-4 border-b border-zinc-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="https://modealo.com/site/uploads/2024/Nov/27/5c5bac629567368e6c15c8c5c9a96010%20(1).png" alt="Logo Modex" class="h-8 w-auto">
+        <div>
+          <h1 class="text-xl font-bold nova-glow">Modex</h1>
+          <p class="text-xs text-zinc-400">Powered by Modealo</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          @click="startNewChat"
+          class="text-xs px-3 py-1 bg-modealo-input hover:bg-opacity-80 rounded-full flex items-center gap-1"
+        >
+          Reestablecer chat
+        </button>
+        <div class="text-xs px-2 py-1 bg-white text-black rounded-full">v1.0</div>
+      </div>
+    </header>
+
+    <!-- Mensajes del Chat -->
+    <div class="flex-1 overflow-hidden flex flex-col">
+      <div class="message-container flex-1 overflow-y-auto py-4 space-y-4 px-4 md:px-8" id="messageContainer">
+        <template x-if="messages.length === 0">
+          <div class="flex flex-col items-center justify-center h-full text-zinc-500 py-12">
+            <div class="relative mb-6">
+              <img src="https://modealo.com/site/uploads/2024/Nov/27/5c5bac629567368e6c15c8c5c9a96010%20(1).png" alt="Logo Modex" class="h-16 w-auto">
+            </div>
+            <p class="text-center mt-2 max-w-md">¡Hola, soy Modex! ¿En qué puedo ayudarte?</p>
+            <p class="text-center text-xs mt-2 max-w-md">Esta conversación es efímera. Al cerrar o refrescar la página, el chat se eliminará. Modealo se toma en serio la privacidad.</p>
+          </div>
+        </template>
+
+        <template x-for="(message, index) in messages" :key="index">
+          <div :class="`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`">
+            <div :class="`flex items-start gap-2 max-w-[80%] ${message.role === 'user' ? 'bg-modealo-input' : 'bg-modealo-response'} p-3 rounded-lg`">
+              <div class="mt-1 flex-shrink-0">
+                <template x-if="message.role === 'user'">
+                </template>
+                <template x-if="message.role === 'assistant'">
+                </template>
+              </div>
+              <div class="markdown-content" x-html="message.role === 'assistant' ? marked.parse(message.content) : message.content"></div>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="isLoading">
+          <div class="flex justify-start">
+            <div class="flex items-start gap-2 max-w-[80%] bg-modealo-response p-3 rounded-lg">
+              <div class="mt-1 flex-shrink-0">
+                <div class="flex items-center justify-center h-5 w-5">
+                  <img src="https://modealo.com/favicon.ico" alt="Logo Modex" class="h-5 w-5 rounded-full">
+                </div>
+              </div>
+              <div class="typing-animation">Procesando</div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Área de Entrada -->
+    <div class="py-4 px-4 md:px-8">
+      <form @submit.prevent="sendMessage" class="flex gap-2">
+        <input 
+          id="chat-input"
+          type="text" 
+          x-model="userInput" 
+          placeholder="Pregúntale algo a Modex..." 
+          class="flex-1 bg-modealo-input rounded-full px-4 py-2 focus:outline-none focus:ring-1 focus:ring-white focus:ring-opacity-50 shadow-inner"
+          :disabled="isLoading"
+          @blur="handleInputBlur"
+          autocomplete="off"
+        >
+        <button 
+          type="submit" 
+          class="bg-white hover:bg-gray-200 text-black w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed pulse-animation"
+          :disabled="isLoading || !userInput.trim()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2L11 13"></path>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+          </svg>
+        </button>
+      </form>
+      <div class="text-center text-xs text-zinc-500 mt-[15px] mt-2">
+        Modex es la inteligencia artificial de Modealo
+      </div>
+    </div>
+  </div>
+
+  <script>
+function chatApp() {
+  return {
+    messages: [],
+    userInput: '',
+    isLoading: false,
+
+    init() {
+      const savedMessages = localStorage.getItem('modex_chat');
+      if (savedMessages) {
+        this.messages = JSON.parse(savedMessages);
+        this.$nextTick(() => {
+          this.scrollToBottom();
+        });
+      }
+    },
+
+    async sendMessage() {
+      if (!this.userInput.trim() || this.isLoading) return;
+
+      const userMessage = {
+        role: 'user',
+        content: this.userInput
+      };
+
+      this.messages.push(userMessage);
+      this.saveToLocalStorage();
+      const currentInput = this.userInput;
+      this.userInput = '';
+
+      this.scrollToBottom();
+
+      try {
+        const response = await fetch('https://api.modealo.com/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'gemma3:1b',
+            prompt: currentInput,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error del servidor: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        
+        // Dividir la respuesta en eventos JSON individuales usando regex
+        const jsonEvents = responseText.match(/({[^}]+})/g) || [];
+        
+        // Procesar cada evento JSON
+        let fullResponse = '';
+        for (const event of jsonEvents) {
+          try {
+            const data = JSON.parse(event);
+            if (data.response && typeof data.response === 'string') {
+              fullResponse += data.response;
+            }
+          } catch (parseError) {
+            console.warn('Evento ignorado:', event);
+          }
+        }
+
+        const botMessage = {
+          role: 'assistant',
+          content: fullResponse.trim() || 'Lo siento, no pude procesar la respuesta correctamente.'
+        };
+        
+        // Configurar marked para que respete los saltos de línea
+        marked.setOptions({
+          breaks: true,
+          gfm: true
+        });
+        
+        this.messages.push(botMessage);
+        this.saveToLocalStorage(); // Guardar después de cada mensaje
+      } catch (error) {
+        console.error('Error completo:', error);
+        this.handleError('Error en la comunicación con el servidor. Por favor, intenta de nuevo.');
+      } finally {
+        this.finishRequest();
+      }
+    },
+
+    saveToLocalStorage() {
+      localStorage.setItem('modex_chat', JSON.stringify(this.messages));
+    },
+
+    handleError(errorMessage) {
+      const errorResponse = {
+        role: 'assistant',
+        content: `Lo siento, hubo un error: ${errorMessage} Por favor, intenta de nuevo.`
+      };
+      this.messages.push(errorResponse);
+      this.saveToLocalStorage();
+    },
+
+    finishRequest() {
+      this.isLoading = false;
+      this.$nextTick(() => {
+        this.scrollToBottom();
+        this.focusInput();
+      });
+    },
+
+    focusInput() {
+      // Solo enfocar si el usuario no está seleccionando texto o en un link
+      if (!window.getSelection().toString()) {
+        document.getElementById('chat-input').focus();
+      }
+    },
+
+    handleInputBlur() {
+      // Pequeño delay para permitir interacción con links y selección de texto
+      setTimeout(() => {
+        if (!window.getSelection().toString()) {
+          this.focusInput();
+        }
+      }, 100);
+    },
+
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const container = document.getElementById('messageContainer');
+        container.scrollTop = container.scrollHeight;
+      });
+    },
+
+    init() {
+      // Podemos añadir un mensaje de bienvenida si es necesario
+      // this.messages.push({
+      //   role: 'assistant',
+      //   content: '¡Hola! Soy Modex, tu asistente inteligente de Modealo. ¿En qué puedo ayudarte hoy?'
+      // });
+      
+      // Asegurarse de que la app ocupe toda la pantalla
+      document.documentElement.style.height = '100%';
+      document.body.style.height = '100%';
+    }
+  }
+}
+  </script>
+</body>
+</html>
