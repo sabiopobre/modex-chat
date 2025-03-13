@@ -22,7 +22,7 @@ Modex Chat es una interfaz de chat integrada para Modex, la inteligencia artific
 
 1. Clona este repositorio:
    ```
-   git clone https://github.com/modealo/modex-chat.git
+   git clone https://github.com/sabiopobre/modex-chat.git
    ```
 
 2. Abre el archivo `index.html` en tu navegador preferido.
