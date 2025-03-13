@@ -48,7 +48,7 @@ Para contribuir al desarrollo de Modex Chat:
 
 Modealo - [https://modealo.com](https://modealo.com)
 
-Enlace del proyecto: [https://github.com/sabiopobre/modex-chat](https://github.com/sabiopobre/modex-chat)
+Modex - [https://chat.modealo.com](https://chat.modealo.com)
 
 ## Licencia
 
